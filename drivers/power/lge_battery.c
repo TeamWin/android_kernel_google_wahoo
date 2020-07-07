@@ -658,25 +658,25 @@ static int bm_init(struct battery_manager *bm)
 	bm->batt_psy = power_supply_get_by_name("battery");
 	if (!bm->batt_psy) {
 		pr_bm(ERROR, "Couldn't get batt_psy\n");
-		return -ENODEV;
+		return -EPROBE_DEFER;
 	}
 
 	bm->usb_psy = power_supply_get_by_name("usb");
 	if (!bm->usb_psy) {
 		pr_bm(ERROR, "Couldn't get usb_psy\n");
-		return -ENODEV;
+		return -EPROBE_DEFER;
 	}
 
 	bm->pl_psy = power_supply_get_by_name("parallel");
 	if (!bm->pl_psy) {
 		pr_bm(ERROR, "Couldn't get pl_psy\n");
-		return -ENODEV;
+		return -EPROBE_DEFER;
 	}
 
 	bm->bms_psy = power_supply_get_by_name("bms");
 	if (!bm->bms_psy) {
 		pr_bm(ERROR, "Couldn't get bms_psy\n");
-		return -ENODEV;
+		return -EPROBE_DEFER;
 	}
 
 	rc = bm_get_property(bm->batt_psy,
@@ -709,6 +709,11 @@ static int bm_init(struct battery_manager *bm)
 	if (rc < 0) {
 		bm->batt_id = BM_BATT_TOCAD;
 	} else {
+		if (!batt_id) {
+			pr_bm(ERROR, "Battery id is zero, deferring probe!\n");
+			return -EPROBE_DEFER;
+		}
+
 		for (i = 0; i < BM_BATT_MAX; i++) {
 			if (valid_batt_id[i].min <= batt_id &&
 			    valid_batt_id[i].max >= batt_id)
@@ -992,6 +997,6 @@ static struct kernel_param_ops charge_start_ops = {
 module_param_cb(charge_start_level, &charge_start_ops,
 		&charge_start_level, 0644);
 
-late_initcall(lge_battery_init);
+module_init(lge_battery_init);
 module_exit(lge_battery_exit);
 MODULE_LICENSE("GPL");
